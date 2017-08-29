@@ -1,0 +1,120 @@
+
+REGISTER /usr/local/pig/lib/piggybank.jar;
+
+
+
+
+
+
+------1
+.Write a pig script to find no of complaints which got timely response
+DEFINE CSVoader org.apache.pig.piggybank.storage.CSVLoader();
+
+ConsumerComplain = LOAD '/user/krushnadebashram_project2_2_ConsumerComplaint/Source_ConsumerComplaint/F*.*' 
+
+USING org.apache.pig.piggybank.storage.CSVExcelStorage() as (Datereceived:chararray,Product:chararray,Subproduct:chararray,Issue:chararray,Subissue:chararray
+,Consumercomplaintnarrative:chararray
+,Companypublicresponse:chararray,Company:chararray,State:chararray,ZIPcode:chararray,Submittedvia:chararray
+,Datesenttocompany:chararray
+,Companyresponsetoconsumer:chararray,IsTimelyresponse:chararray,IsConsumerdisputed:chararray,ComplaintID:chararray
+);
+
+ConsumerComplain_excludeHeader =  filter ConsumerComplain by (Datereceived!='Date received') ;
+
+filterTimelyResponse = filter ConsumerComplain_excludeHeader by IsTimelyresponse=='Yes';
+
+ConsumerComplainGenerate  = FOREACH filterTimelyResponse  GENERATE 1 as Constant, ComplaintID;
+
+groupByConstant = GROUP  ConsumerComplainGenerate BY Constant;
+
+countAll = FOREACH groupByConstant GENERATE COUNT(ConsumerComplainGenerate.ComplaintID);
+
+STORE countAll INTO '/user/krushnadebashram_project2_2_ConsumerComplaint/Result/Result1' using PigStorage(',');
+
+
+
+------2
+.Write a pig script to find no of complaints where consumer forum forwarded the complaint same day they received to respective company
+DEFINE CSVoader org.apache.pig.piggybank.storage.CSVLoader();
+
+ConsumerComplain = LOAD '/user/krushnadebashram_project2_2_ConsumerComplaint/Source_ConsumerComplaint/F*.*' 
+
+USING org.apache.pig.piggybank.storage.CSVExcelStorage() as (Datereceived:chararray,Product:chararray,Subproduct:chararray,Issue:chararray,Subissue:chararray
+,Consumercomplaintnarrative:chararray
+,Companypublicresponse:chararray,Company:chararray,State:chararray,ZIPcode:chararray,Submittedvia:chararray
+,Datesenttocompany:chararray
+,Companyresponsetoconsumer:chararray,IsTimelyresponse:chararray,IsConsumerdisputed:chararray,ComplaintID:chararray
+);
+
+ConsumerComplain_excludeHeader =  filter ConsumerComplain by (Datereceived!='Date received') ;
+
+filterSentToComapanySameDay= filter ConsumerComplain_excludeHeader by ToDate(Datereceived,'mm/dd/yyyy')==ToDate(Datesenttocompany,'mm/dd/yyyy');
+
+ConsumerComplainGenerate  = FOREACH filterSentToComapanySameDay  GENERATE 1 as Constant, ComplaintID;
+
+groupByConstant = GROUP  ConsumerComplainGenerate BY Constant;
+
+countAll = FOREACH groupByConstant GENERATE COUNT(ConsumerComplainGenerate.ComplaintID);
+
+STORE countAll INTO '/user/krushnadebashram_project2_2_ConsumerComplaint/Result/Result2' using PigStorage(',');
+
+
+
+
+------3.Write a pig script to find list of companies toping in complaint chart (companies with maximum number of complaints)
+
+DEFINE CSVoader org.apache.pig.piggybank.storage.CSVLoader();
+
+ConsumerComplain = LOAD '/user/krushnadebashram_project2_2_ConsumerComplaint/Source_ConsumerComplaint/F*.*' 
+
+USING org.apache.pig.piggybank.storage.CSVExcelStorage() as (Datereceived:chararray,Product:chararray,Subproduct:chararray,Issue:chararray,Subissue:chararray
+,Consumercomplaintnarrative:chararray
+,Companypublicresponse:chararray,Company:chararray,State:chararray,ZIPcode:chararray,Submittedvia:chararray
+,Datesenttocompany:chararray
+,Companyresponsetoconsumer:chararray,IsTimelyresponse:chararray,IsConsumerdisputed:chararray,ComplaintID:chararray
+);
+
+ConsumerComplain_excludeHeader =  filter ConsumerComplain by (Datereceived!='Date received') ;
+
+ConsumerComplainGenerate  = FOREACH ConsumerComplain_excludeHeader  GENERATE Company,ComplaintID;
+
+groupByCompany = GROUP  ConsumerComplainGenerate BY Company;
+
+countByCompany = FOREACH groupByCompany GENERATE group  as Company,COUNT(ConsumerComplainGenerate.Company) as ComplaintCnt;
+
+orderByDesc = ORDER  countByCompany By ComplaintCnt Desc;
+
+limitDesc = LIMIT orderByDesc 20;
+
+STORE limitDesc INTO '/user/krushnadebashram_project2_2_ConsumerComplaint/Result/Result3' using org.apache.pig.piggybank.storage.CSVExcelStorage();
+
+
+
+
+------4.Write a pig script to find no of complaints filed with product type has “ Debt collection” for the year 2015
+DEFINE CSVoader org.apache.pig.piggybank.storage.CSVLoader();
+
+ConsumerComplain = LOAD '/user/krushnadebashram_project2_2_ConsumerComplaint/Source_ConsumerComplaint/F*.*' 
+
+USING org.apache.pig.piggybank.storage.CSVExcelStorage() as (Datereceived:chararray,Product:chararray,Subproduct:chararray,Issue:chararray,Subissue:chararray
+,Consumercomplaintnarrative:chararray
+,Companypublicresponse:chararray,Company:chararray,State:chararray,ZIPcode:chararray,Submittedvia:chararray
+,Datesenttocompany:chararray
+,Companyresponsetoconsumer:chararray,IsTimelyresponse:chararray,IsConsumerdisputed:chararray,ComplaintID:chararray
+);
+
+ConsumerComplain_excludeHeader =  filter ConsumerComplain by (Datereceived!='Date received') ;
+
+filterYear2015withDebtCollection= filter ConsumerComplain_excludeHeader by GetYear(ToDate(Datereceived,'mm/dd/yyyy'))==2015 and Product=='Debt collection';
+Consumer2015withDebtCollectionGenerate  = FOREACH filterYear2015withDebtCollection  GENERATE 1 as Constant,ComplaintID;
+
+groupBy2015withDebtCollection = GROUP  Consumer2015withDebtCollectionGenerate BY Constant;
+
+countBy2015withDebtCollection = FOREACH groupBy2015withDebtCollection GENERATE COUNT(Consumer2015withDebtCollectionGenerate.ComplaintID) as ComplaintCnt;
+
+STORE countBy2015withDebtCollection INTO '/user/krushnadebashram_project2_2_ConsumerComplaint/Result/Result4' using PigStorage(',');
+
+
+
+
+----------------
